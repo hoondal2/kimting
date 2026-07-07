@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/kimting
+    username: postgres
+    password: your_password_here
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+  ai:
+    embedding:
+      transformer:
+        onnx:
+          model-uri: https://huggingface.co/jhgan/ko-sroberta-multitask/resolve/main/onnx/model.onnx
+          tokenizer-uri: https://huggingface.co/jhgan/ko-sroberta-multitask/resolve/main/tokenizer.json
+    vectorstore:
+      pgvector:
+        dimensions: 768
+        distance-type: COSINE_DISTANCE
+        initialize-schema: true
+        index-type: HNSW
+        schema-name: public
+        table-name: vector_store
+    mcp:
+      server:
+        name: kimting-mcp
+        version: 1.0.0
