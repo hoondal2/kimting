@@ -29,20 +29,22 @@ LLM은 컨텍스트 윈도우가 닫히면 기억이 사라진다. kimting은 �
 ## 시작하기
 
 ```bash
-# 1. pgvector 실행 (Docker)
-docker run -d --name kimting-pgvector \
-  -e POSTGRES_PASSWORD=your_password \
-  -p 5433:5432 \
-  pgvector/pgvector:pg16
+# 1. 저장소 클론
+git clone https://github.com/hoondal2/kimting.git
+cd kimting
 
-# 2. 설정 파일 복사
+# 2. 설정 파일 복사 후 DB 비밀번호 설정
 cp src/main/resources/application.yaml.example \
    src/main/resources/application.yaml
-# application.yaml에서 DB 비밀번호 설정
 
-# 3. 실행
+# 3. pgvector 실행
+docker-compose up -d
+
+# 4. 애플리케이션 실행
 ./gradlew bootRun
 ```
+
+> **사전 요구사항**: Java 21, Docker
 
 ## 프로젝트 구조
 
