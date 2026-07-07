@@ -38,6 +38,9 @@ dependencies {
 	// PostgreSQL 드라이버
 	runtimeOnly 'org.postgresql:postgresql'
 
+	// Claude (Anthropic) - 자연어 Memory 파싱용 LLM
+	implementation 'org.springframework.ai:spring-ai-starter-model-anthropic'
+
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

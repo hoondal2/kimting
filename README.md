@@ -1,20 +1,22 @@
 # kimting
 
-AI 앱에 장기 기억을 제공하는 오픈소스 Personal Memory Engine
+사람의 디지털 삶을 기억하는 오픈소스 Personal Memory Engine
 
 ---
 
 ## 소개
 
-LLM은 컨텍스트 윈도우가 닫히면 기억이 사라진다. kimting은 대화, 일정, 메일 등 흩어진 개인 기록을 구조화된 Memory로 저장하고, AI 앱이 필요할 때 꺼내 쓸 수 있는 Memory API와 MCP 서버를 제공한다.
+카카오톡 대화, 이메일, 일정 등 개인의 디지털 기록은 플랫폼마다 흩어져 있고, AI는 그 맥락을 모른다. kimting은 흩어진 개인 기록을 구조화된 Memory로 저장하고, AI가 사람의 삶과 관계를 이해할 수 있도록 기억을 제공하는 엔진이다.
+
+> "창수가 누구야?" — 단톡방에서 처음 보는 이름이 나와도, kimting이 있으면 AI가 이전 대화를 바탕으로 대답한다.
 
 ## 특징
 
+- **플러그인 임포터** — 카카오톡(수동), Telegram(자동) 등 개인 데이터를 Memory로 변환
 - **Memory API** — store, search, timeline, strengthen, forget
 - **복합 랭킹** — 벡터 유사도 + 중요도 + 최신성 + 신뢰도
-- **플러그인 임포터** — 카카오톡, 메일 등 다양한 플랫폼 지원 구조
-- **MCP 서버** — Claude Desktop 등 MCP 클라이언트와 바로 연결
 - **로컬 우선** — 개인 데이터를 외부 서버로 전송하지 않음
+- **MCP 지원** — Claude Desktop 등 MCP 클라이언트와 연결 가능
 
 ## 기술 스택
 
@@ -62,11 +64,11 @@ src/main/java/com/kimting/kimting/
 | 주차 | 내용 | 상태 |
 |------|------|------|
 | 1주차 | Memory 모델 설계 + 프로젝트 구조 | ✅ 완료 |
-| 2주차 | KakaoTalk 임포터 구현 | 진행 중 |
-| 3주차 | Memory 랭킹 + 검색 고도화 | 예정 |
-| 4주차 | REST API + Timeline 쿼리 | 예정 |
-| 5주차 | MCP 서버 + Claude Desktop 연결 | 예정 |
-| 6주차 | 문서 + 예제 + 배포 | 예정 |
+| 2주차 | KakaoTalk 임포터 (수동 .txt 파싱) | 진행 중 |
+| 3주차 | REST API 완성 + 자연어 Memory 파싱 | 예정 |
+| 4주차 | Memory 랭킹/검색 고도화 + SDK | 예정 |
+| 5주차 | Telegram 임포터 (자동 수집) + CLI | 예정 |
+| 6주차 | MCP + 확인 흐름 + 문서 + 대회 제출 | 예정 |
 
 ## 라이선스
 

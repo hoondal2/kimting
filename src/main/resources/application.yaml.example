@@ -9,6 +9,11 @@ spring:
       ddl-auto: update
     show-sql: true
     open-in-view: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
   ai:
     embedding:
       transformer:
@@ -23,7 +28,22 @@ spring:
         index-type: HNSW
         schema-name: public
         table-name: vector_store
+    anthropic:
+      api-key: your-anthropic-api-key-here   # https://console.anthropic.com
+      chat:
+        options:
+          model: claude-haiku-4-5-20251001   # 빠르고 저렴. claude-sonnet-4-6 으로 변경 가능
+          max-tokens: 1024
+          temperature: 0.1                   # 낮을수록 JSON 출력이 안정적
     mcp:
       server:
         name: kimting-mcp
         version: 1.0.0
+
+# LLM 파서 설정
+# provider: anthropic | rule-based
+#   anthropic  - Claude API 사용 (api-key 필요)
+#   rule-based - LLM 없이 키워드/정규식으로 파싱 (API key 불필요)
+kimting:
+  parser:
+    provider: anthropic

@@ -64,9 +64,17 @@ public class Memory {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    // 데이터 출처: "kakao", "email", "manual" 등
+    // 데이터 출처: "kakao", "telegram", "manual" 등
     @Column(nullable = false)
     private String source;
+
+    // 그때 어떤 감정이었는가 ("서운했다", "기뻤다")
+    @Column(columnDefinition = "TEXT")
+    private String emotion;
+
+    // 돌아보며 깨달은 것 ("내가 관계에서 먼저 연락을 못하는 성격임을 알았다")
+    @Column(columnDefinition = "TEXT")
+    private String insight;
 
     @PrePersist
     protected void onCreate() {
