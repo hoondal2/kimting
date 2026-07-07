@@ -36,6 +36,9 @@ out/
 ### VS Code ###
 .vscode/
 
+### Blog ###
+blog/
+
 ### Secrets ###
 src/main/resources/application.yaml
 src/main/resources/application-*.yaml
