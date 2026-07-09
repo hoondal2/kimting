@@ -15,11 +15,6 @@ spring:
     deserialization:
       fail-on-unknown-properties: false
   ai:
-    embedding:
-      transformer:
-        onnx:
-          model-uri: https://huggingface.co/jhgan/ko-sroberta-multitask/resolve/main/onnx/model.onnx
-          tokenizer-uri: https://huggingface.co/jhgan/ko-sroberta-multitask/resolve/main/tokenizer.json
     vectorstore:
       pgvector:
         dimensions: 768
@@ -28,22 +23,30 @@ spring:
         index-type: HNSW
         schema-name: public
         table-name: vector_store
-    anthropic:
-      api-key: your-anthropic-api-key-here   # https://console.anthropic.com
+    openai:
+      api-key: your-gemini-api-key-here   # https://aistudio.google.com → Get API key
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai
       chat:
+        completions-path: /chat/completions
         options:
-          model: claude-haiku-4-5-20251001   # 빠르고 저렴. claude-sonnet-4-6 으로 변경 가능
+          model: gemini-1.5-flash           # 무료 티어. gemini-2.0-flash, gemini-1.5-pro 등으로 변경 가능
           max-tokens: 1024
-          temperature: 0.1                   # 낮을수록 JSON 출력이 안정적
+          temperature: 0.1                 # 파싱용 기본값. 채팅은 ChatService에서 0.7로 오버라이드
+      embedding:
+        embeddings-path: /embeddings
+        options:
+          model: gemini-embedding-001       # outputDimensionality=768 적용, 무료 티어
+    retry:
+      max-attempts: 1   # 429 시 자동 재시도 비활성화 (무료 티어 quota 보호)
     mcp:
       server:
         name: kimting-mcp
         version: 1.0.0
 
 # LLM 파서 설정
-# provider: anthropic | rule-based
-#   anthropic  - Claude API 사용 (api-key 필요)
+# provider: llm | rule-based
+#   llm        - Google Gemini API 사용 (api-key 필요)
 #   rule-based - LLM 없이 키워드/정규식으로 파싱 (API key 불필요)
 kimting:
   parser:
-    provider: anthropic
+    provider: llm

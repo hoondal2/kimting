@@ -29,17 +29,14 @@ dependencies {
 	// Spring AI MCP 서버
 	implementation 'org.springframework.ai:spring-ai-starter-mcp-server'
 
-	// 한국어 임베딩 모델 (로컬)
-	implementation 'org.springframework.ai:spring-ai-starter-model-transformers'
-
 	// pgvector
 	implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
 
 	// PostgreSQL 드라이버
 	runtimeOnly 'org.postgresql:postgresql'
 
-	// Claude (Anthropic) - 자연어 Memory 파싱용 LLM
-	implementation 'org.springframework.ai:spring-ai-starter-model-anthropic'
+	// Google Gemini - 자연어 Memory 파싱용 LLM (OpenAI 호환 엔드포인트 사용)
+	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

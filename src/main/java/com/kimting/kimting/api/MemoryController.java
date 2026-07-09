@@ -110,7 +110,7 @@ public class MemoryController {
     public ResponseEntity<ParseResult> parse(@RequestBody Map<String, String> body) {
         String text = body.get("text");
         if (text == null || text.isBlank()) {
-            throw new IllegalArgumentException("text 필드가 비어있습니다.");
+            throw new IllegalArgumentException("'text' field must not be blank.");
         }
         return ResponseEntity.ok(memoryParser.parse(text));
     }
@@ -133,7 +133,7 @@ public class MemoryController {
         parsed.forEach(memoryService::store);
         return ResponseEntity.ok(Map.of(
                 "imported", parsed.size(),
-                "message", parsed.size() + "개의 대화 세션을 Memory로 저장했습니다."
+                "message", parsed.size() + " conversation session(s) saved as Memory."
         ));
     }
 }
