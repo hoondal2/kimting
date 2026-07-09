@@ -1,43 +1,56 @@
-export default function MemoryPanel({ memories }) {
-  const { used = [], saved = [] } = memories ?? {}
+import { TYPE_LABELS, formatMemDate } from '../utils'
 
+export default function MemoryPanel({ usedMemories, recentMemories, onGoMemory }) {
   return (
-    <aside className="memory-panel">
-      <h2>기억 패널</h2>
+    <aside className="memory-side-panel">
+      <div className="panel-title">기억 패널</div>
 
-      <section>
-        <h3>사용된 기억 <span className="badge">{used.length}</span></h3>
-        {used.length === 0
-          ? <p className="empty">없음</p>
-          : used.map(m => <MemoryCard key={m.id} memory={m} />)
+      <div className="panel-section-header">
+        사용된 기억
+        <span className="panel-badge">{usedMemories.length}</span>
+      </div>
+      <div className="panel-mem-list">
+        {usedMemories.length === 0
+          ? <div className="panel-empty">없음</div>
+          : usedMemories.map(m => <MemCard key={m.id} memory={m} />)
         }
-      </section>
+      </div>
 
-      <section>
-        <h3>저장된 기억 <span className="badge new">{saved.length}</span></h3>
-        {saved.length === 0
-          ? <p className="empty">없음</p>
-          : saved.map(m => <MemoryCard key={m.id} memory={m} highlight />)
+      <div className="panel-section-header">
+        저장된 기억
+        <span className="panel-badge dim">{recentMemories.length}</span>
+      </div>
+      <div className="panel-timeline">
+        {recentMemories.length === 0
+          ? <div className="panel-empty">없음</div>
+          : recentMemories.slice(0, 5).map(m => <TimelineItem key={m.id} memory={m} />)
         }
-      </section>
+      </div>
+
+      <button className="panel-all-btn" onClick={onGoMemory}>
+        전체 기억 보기 →
+      </button>
     </aside>
   )
 }
 
-function MemoryCard({ memory, highlight }) {
+function MemCard({ memory }) {
+  const { date, time } = formatMemDate(memory.occurredAt)
   return (
-    <div className={`memory-card ${highlight ? 'highlight' : ''}`}>
-      <span className="memory-type">{memory.type}</span>
-      <p className="memory-title">{memory.title}</p>
-      {memory.occurredAt && (
-        <span className="memory-date">{formatDate(memory.occurredAt)}</span>
-      )}
+    <div className="panel-mem-card">
+      <div className="panel-mem-meta">{date} · {time}</div>
+      <div className="panel-mem-text">{memory.title}</div>
     </div>
   )
 }
 
-function formatDate(iso) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+function TimelineItem({ memory }) {
+  const { date } = formatMemDate(memory.occurredAt)
+  return (
+    <div className="panel-timeline-item">
+      <div className="panel-timeline-dot" />
+      <div className="panel-mem-meta">{date} · {TYPE_LABELS[memory.type] ?? memory.type}</div>
+      <div className="panel-mem-text">{memory.title}</div>
+    </div>
+  )
 }
