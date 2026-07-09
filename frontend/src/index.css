@@ -218,6 +218,9 @@ a { color: inherit; }
 .login-logo-text { font-family: 'DotGothic16', monospace; font-size: 16px; }
 .login-title { font-family: 'DotGothic16', monospace; font-size: 28px; letter-spacing: .01em; margin-bottom: 8px; }
 .login-subtitle { font-size: 15px; color: rgba(246,245,242,0.55); margin-bottom: 40px; }
+.login-tabs { display: flex; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+.login-tab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 0; font-size: 14px; font-family: 'Noto Sans KR', sans-serif; color: var(--muted); cursor: pointer; transition: color .15s, border-color .15s; margin-bottom: -1px; }
+.login-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .login-form { display: flex; flex-direction: column; gap: 16px; }
 .login-field-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(246,245,242,0.45); margin-bottom: 8px; }
 .login-input { width: 100%; background: #1c1b1f; border: 1px solid rgba(246,245,242,0.14); border-radius: 10px; padding: 14px 16px; color: #f6f5f2; font-size: 15px; font-family: 'Noto Sans KR', sans-serif; transition: border-color 0.15s; }

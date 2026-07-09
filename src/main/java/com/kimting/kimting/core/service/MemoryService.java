@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,10 +34,14 @@ public class MemoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<Memory> search(String query, int topK) {
-        List<Document> docs = vectorStore.similaritySearch(
-                SearchRequest.builder().query(query).topK(topK).build()
-        );
+    public List<Memory> search(String query, int topK, UUID userId) {
+        SearchRequest.Builder builder = SearchRequest.builder().query(query).topK(topK);
+        if (userId != null) {
+            FilterExpressionBuilder b = new FilterExpressionBuilder();
+            builder.filterExpression(b.eq("user_id", userId.toString()).build());
+        }
+
+        List<Document> docs = vectorStore.similaritySearch(builder.build());
 
         List<UUID> ids = docs.stream()
                 .map(d -> UUID.fromString(d.getId()))
@@ -44,11 +49,10 @@ public class MemoryService {
 
         List<Memory> memories = memoryRepository.findAllById(ids);
 
-        // 벡터 유사도 점수와 메타데이터를 결합해 랭킹 적용
         Map<UUID, Double> scoreMap = new HashMap<>();
-        for (int i = 0; i < docs.size(); i++) {
-            UUID id = UUID.fromString(docs.get(i).getId());
-            double similarity = docs.get(i).getScore() != null ? docs.get(i).getScore() : 0.0;
+        for (Document doc : docs) {
+            UUID id = UUID.fromString(doc.getId());
+            double similarity = doc.getScore() != null ? doc.getScore() : 0.0;
             scoreMap.put(id, similarity);
         }
 
@@ -60,12 +64,18 @@ public class MemoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<Memory> timeline(LocalDateTime from, LocalDateTime to) {
+    public List<Memory> timeline(LocalDateTime from, LocalDateTime to, UUID userId) {
+        if (userId != null) {
+            return memoryRepository.findByUserIdAndOccurredAtBetweenOrderByOccurredAtDesc(userId, from, to);
+        }
         return memoryRepository.findByOccurredAtBetweenOrderByOccurredAtDesc(from, to);
     }
 
     @Transactional(readOnly = true)
-    public List<Memory> findByPerson(String person) {
+    public List<Memory> findByPerson(String person, UUID userId) {
+        if (userId != null) {
+            return memoryRepository.findByUserIdAndPeopleContainingOrderByOccurredAtDesc(userId, person);
+        }
         return memoryRepository.findByPeopleContainingOrderByOccurredAtDesc(person);
     }
 
@@ -75,15 +85,17 @@ public class MemoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<Memory> recent(int limit) {
+    public List<Memory> recent(int limit, UUID userId) {
+        if (userId != null) {
+            return memoryRepository.findTop20ByUserIdOrderByCreatedAtDesc(userId);
+        }
         return memoryRepository.findTop20ByOrderByCreatedAtDesc();
     }
 
     @Transactional
     public void strengthen(UUID id) {
         memoryRepository.findById(id).ifPresent(m -> {
-            int newImportance = Math.min(10, m.getImportance() + 1);
-            m.setImportance(newImportance);
+            m.setImportance(Math.min(10, m.getImportance() + 1));
             memoryRepository.save(m);
         });
     }
@@ -91,8 +103,7 @@ public class MemoryService {
     @Transactional
     public void forget(UUID id) {
         memoryRepository.findById(id).ifPresent(m -> {
-            int newImportance = Math.max(1, m.getImportance() - 1);
-            m.setImportance(newImportance);
+            m.setImportance(Math.max(1, m.getImportance() - 1));
             memoryRepository.save(m);
         });
     }
@@ -119,7 +130,6 @@ public class MemoryService {
 
         Memory updated = memoryRepository.save(memory);
 
-        // 벡터스토어도 갱신
         vectorStore.delete(List.of(id.toString()));
         String embeddingText = updated.getSummary() != null ? updated.getSummary() : updated.getContent();
         vectorStore.add(List.of(new Document(id.toString(), embeddingText, buildMetadata(updated))));
@@ -135,12 +145,14 @@ public class MemoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<Memory> list(MemoryType type, String tag, int limit) {
+    public List<Memory> list(MemoryType type, String tag, int limit, UUID userId) {
         List<Memory> base;
-        if (type != null) {
-            base = memoryRepository.findByType(type);
+        if (userId != null) {
+            base = (type != null)
+                    ? memoryRepository.findByUserIdAndType(userId, type)
+                    : memoryRepository.findByUserId(userId);
         } else {
-            base = memoryRepository.findAll();
+            base = (type != null) ? memoryRepository.findByType(type) : memoryRepository.findAll();
         }
         return base.stream()
                 .filter(m -> tag == null || m.getTags().contains(tag))
@@ -150,8 +162,9 @@ public class MemoryService {
     }
 
     @Transactional
-    public Memory storeFromParseResult(ParseResult result) {
+    public Memory storeFromParseResult(ParseResult result, UUID userId) {
         Memory memory = Memory.builder()
+                .userId(userId)
                 .type(result.getType())
                 .title(result.getTitle())
                 .content(result.getContent())
@@ -172,6 +185,9 @@ public class MemoryService {
         metadata.put("title", memory.getTitle());
         metadata.put("importance", memory.getImportance());
         metadata.put("source", memory.getSource());
+        if (memory.getUserId() != null) {
+            metadata.put("user_id", memory.getUserId().toString());
+        }
         if (memory.getOccurredAt() != null) {
             metadata.put("occurred_at", memory.getOccurredAt().toString());
         }

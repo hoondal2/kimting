@@ -64,6 +64,10 @@ public class Memory {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    // 어떤 사용자의 기억인지 (nullable: 기존 데이터 하위 호환)
+    @Column(name = "user_id")
+    private UUID userId;
+
     // 데이터 출처: "kakao", "telegram", "manual" 등
     @Column(nullable = false)
     private String source;

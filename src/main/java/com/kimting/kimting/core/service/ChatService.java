@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -26,24 +27,18 @@ public class ChatService {
     private final MemoryService memoryService;
     private final MemoryParser memoryParser;
 
-    // API key 없이도 앱이 기동되도록 optional 주입
     @Autowired(required = false)
     private ChatModel chatModel;
 
     private static final int TOP_K = 5;
     private static final double AUTO_SAVE_CONFIDENCE = 0.6;
 
-    public ChatResponse chat(ChatRequest request) {
+    public ChatResponse chat(ChatRequest request, UUID userId) {
         String message = request.getMessage();
 
-        // 1. 관련 기억 검색
-        List<Memory> relevantMemories = memoryService.search(message, TOP_K);
-
-        // 2. Claude 호출
-        String aiResponse = callClaude(message, relevantMemories);
-
-        // 3. 사용자 메시지에서 Memory 자동 감지·저장
-        List<Memory> savedMemories = autoSave(message);
+        List<Memory> relevantMemories = memoryService.search(message, TOP_K, userId);
+        String aiResponse = callLlm(message, relevantMemories);
+        List<Memory> savedMemories = autoSave(message, userId);
 
         return ChatResponse.builder()
                 .response(aiResponse)
@@ -52,7 +47,7 @@ public class ChatService {
                 .build();
     }
 
-    private String callClaude(String message, List<Memory> memories) {
+    private String callLlm(String message, List<Memory> memories) {
         if (chatModel == null) {
             throw new IllegalStateException(
                 "Chat requires LLM configuration. " +
@@ -106,12 +101,12 @@ public class ChatService {
         return sb.toString();
     }
 
-    private List<Memory> autoSave(String message) {
+    private List<Memory> autoSave(String message, UUID userId) {
         List<Memory> saved = new ArrayList<>();
         try {
             ParseResult result = memoryParser.parse(message);
             if (shouldSave(result)) {
-                Memory memory = memoryService.storeFromParseResult(result);
+                Memory memory = memoryService.storeFromParseResult(result, userId);
                 saved.add(memory);
                 log.info("채팅 메시지에서 Memory 자동 저장: type={}, title={}", result.getType(), result.getTitle());
             }
@@ -124,7 +119,6 @@ public class ChatService {
     private boolean shouldSave(ParseResult result) {
         if (result == null || result.getType() == null) return false;
         if (result.getConfidence() == null || result.getConfidence() < AUTO_SAVE_CONFIDENCE) return false;
-        // 내용이 너무 짧으면 저장하지 않음
         String content = result.getContent();
         return content != null && content.length() >= 5;
     }

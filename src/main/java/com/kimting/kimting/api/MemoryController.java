@@ -9,6 +9,8 @@ import com.kimting.kimting.parser.MemoryParser;
 import com.kimting.kimting.parser.ParseResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,10 +29,19 @@ public class MemoryController {
     private final KakaoImporter kakaoImporter;
     private final MemoryParser memoryParser;
 
+    private UUID currentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof UUID) {
+            return (UUID) auth.getPrincipal();
+        }
+        return null;
+    }
+
     // ── CRUD ─────────────────────────────────────────────────────────────────
 
     @PostMapping
     public ResponseEntity<Memory> store(@RequestBody Memory memory) {
+        memory.setUserId(currentUserId());
         return ResponseEntity.ok(memoryService.store(memory));
     }
 
@@ -53,37 +64,36 @@ public class MemoryController {
 
     // ── 조회 ─────────────────────────────────────────────────────────────────
 
-    /** type, tag 필터 + limit. 예) GET /api/memories?type=SCHEDULE&limit=10 */
     @GetMapping
     public ResponseEntity<List<Memory>> list(
             @RequestParam(required = false) MemoryType type,
             @RequestParam(required = false) String tag,
             @RequestParam(defaultValue = "20") int limit) {
-        return ResponseEntity.ok(memoryService.list(type, tag, limit));
+        return ResponseEntity.ok(memoryService.list(type, tag, limit, currentUserId()));
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<Memory>> search(
             @RequestParam String query,
             @RequestParam(defaultValue = "10") int topK) {
-        return ResponseEntity.ok(memoryService.search(query, topK));
+        return ResponseEntity.ok(memoryService.search(query, topK, currentUserId()));
     }
 
     @GetMapping("/timeline")
     public ResponseEntity<List<Memory>> timeline(
             @RequestParam LocalDateTime from,
             @RequestParam LocalDateTime to) {
-        return ResponseEntity.ok(memoryService.timeline(from, to));
+        return ResponseEntity.ok(memoryService.timeline(from, to, currentUserId()));
     }
 
     @GetMapping("/people/{person}")
     public ResponseEntity<List<Memory>> byPerson(@PathVariable String person) {
-        return ResponseEntity.ok(memoryService.findByPerson(person));
+        return ResponseEntity.ok(memoryService.findByPerson(person, currentUserId()));
     }
 
     @GetMapping("/recent")
     public ResponseEntity<List<Memory>> recent() {
-        return ResponseEntity.ok(memoryService.recent(20));
+        return ResponseEntity.ok(memoryService.recent(20, currentUserId()));
     }
 
     // ── 기억 강화/약화 ────────────────────────────────────────────────────────
@@ -102,10 +112,6 @@ public class MemoryController {
 
     // ── 자연어 파싱 ───────────────────────────────────────────────────────────
 
-    /**
-     * 자연어 텍스트를 파싱해 Memory 구조를 제안한다. 저장하지 않는다.
-     * 예) POST /api/memories/parse  { "text": "나 내일 10시에 회의있음" }
-     */
     @PostMapping("/parse")
     public ResponseEntity<ParseResult> parse(@RequestBody Map<String, String> body) {
         String text = body.get("text");
@@ -115,13 +121,9 @@ public class MemoryController {
         return ResponseEntity.ok(memoryParser.parse(text));
     }
 
-    /**
-     * /parse 응답을 검토 후 그대로 보내면 Memory로 저장된다.
-     * 클라이언트가 필요에 따라 응답 값을 수정한 뒤 전송할 수 있다.
-     */
     @PostMapping("/parse/confirm")
     public ResponseEntity<Memory> confirm(@RequestBody ParseResult parseResult) {
-        return ResponseEntity.ok(memoryService.storeFromParseResult(parseResult));
+        return ResponseEntity.ok(memoryService.storeFromParseResult(parseResult, currentUserId()));
     }
 
     // ── 임포터 ────────────────────────────────────────────────────────────────
@@ -129,8 +131,12 @@ public class MemoryController {
     @PostMapping("/import/kakao")
     public ResponseEntity<Map<String, Object>> importKakao(@RequestParam("file") MultipartFile file)
             throws IOException {
+        UUID userId = currentUserId();
         List<Memory> parsed = kakaoImporter.parse(file.getInputStream());
-        parsed.forEach(memoryService::store);
+        parsed.forEach(m -> {
+            m.setUserId(userId);
+            memoryService.store(m);
+        });
         return ResponseEntity.ok(Map.of(
                 "imported", parsed.size(),
                 "message", parsed.size() + " conversation session(s) saved as Memory."
