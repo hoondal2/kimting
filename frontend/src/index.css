@@ -207,7 +207,7 @@ a { color: inherit; }
 .terminal-text { font-family: 'DotGothic16', monospace; font-size: 18px; color: #D7FF3D; min-height: 24px; }
 .terminal-cursor { animation: kt-blink 1s step-end infinite; }
 .onboarding-ctas { display: flex; gap: 16px; align-items: center; margin-bottom: 64px; }
-.start-btn { background: #D7FF3D; color: #111014; border: none; clip-path: polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px); padding: 16px 32px; font-size: 16px; font-weight: 700; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; }
+.start-btn { background: #D7FF3D; color: #111014; border: none; border-radius: 999px; padding: 16px 32px; font-size: 16px; font-weight: 700; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; }
 .login-link-btn { background: none; border: none; color: rgba(246,245,242,0.75); font-size: 15px; font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
 
 /* ─── Login ─── */

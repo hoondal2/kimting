@@ -35,8 +35,8 @@ dependencies {
 	// PostgreSQL 드라이버
 	runtimeOnly 'org.postgresql:postgresql'
 
-	// Google Gemini - 자연어 Memory 파싱용 LLM (OpenAI 호환 엔드포인트 사용)
-	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+	// Ollama - 로컬 LLM (채팅 + 임베딩)
+	implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

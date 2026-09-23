@@ -33,6 +33,13 @@ public class MemoryController {
         return null;
     }
 
+    private void checkOwnership(Memory memory) {
+        UUID userId = currentUserId();
+        if (userId == null || !userId.equals(memory.getUserId())) {
+            throw new SecurityException("해당 기억에 대한 접근 권한이 없습니다.");
+        }
+    }
+
     @PostMapping
     public ResponseEntity<Memory> store(@RequestBody Memory memory) {
         memory.setUserId(currentUserId());
@@ -41,17 +48,21 @@ public class MemoryController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Memory> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(memoryUseCase.findById(id));
+        Memory memory = memoryUseCase.findById(id);
+        checkOwnership(memory);
+        return ResponseEntity.ok(memory);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Memory> update(@PathVariable UUID id,
                                          @RequestBody MemoryUpdateRequest request) {
+        checkOwnership(memoryUseCase.findById(id));
         return ResponseEntity.ok(memoryUseCase.update(id, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        checkOwnership(memoryUseCase.findById(id));
         memoryUseCase.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -68,6 +79,9 @@ public class MemoryController {
     public ResponseEntity<List<Memory>> search(
             @RequestParam String query,
             @RequestParam(defaultValue = "10") int topK) {
+        if (query.isBlank()) {
+            throw new IllegalArgumentException("'query' 파라미터는 비어 있을 수 없습니다.");
+        }
         return ResponseEntity.ok(memoryUseCase.search(query, topK, currentUserId()));
     }
 
@@ -90,12 +104,14 @@ public class MemoryController {
 
     @PostMapping("/{id}/strengthen")
     public ResponseEntity<Void> strengthen(@PathVariable UUID id) {
+        checkOwnership(memoryUseCase.findById(id));
         memoryUseCase.strengthen(id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/forget")
     public ResponseEntity<Void> forget(@PathVariable UUID id) {
+        checkOwnership(memoryUseCase.findById(id));
         memoryUseCase.forget(id);
         return ResponseEntity.ok().build();
     }

@@ -1,16 +1,32 @@
 services:
-  pgvector:
+  db:
     image: pgvector/pgvector:pg16
-    container_name: kimting-pgvector
     environment:
       POSTGRES_DB: kimting
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_password_here
-    ports:
-      - "5433:5432"
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kimting_local}
     volumes:
-      - pgvector_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d kimting"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/kimting
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-kimting_local}
+      SPRING_AI_OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
-  pgvector_data:
+  pgdata:

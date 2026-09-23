@@ -59,9 +59,16 @@ export default function ChatWindow({ recentMemories, onMemoriesSaved, onGoMemory
       const savedMems = data.savedMemories ?? []
 
       if (!res.ok) {
+        const friendlyMsg = res.status === 401
+          ? '로그인이 필요해요. 다시 로그인해 주세요.'
+          : res.status === 403
+          ? '접근 권한이 없어요.'
+          : res.status >= 500
+          ? 'AI 응답 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.'
+          : '메시지를 처리하지 못했어요. 다시 시도해 주세요.'
         setMessages(prev => [...prev, {
           id: Date.now(), role: 'assistant',
-          content: `오류: ${data.message ?? res.status}`,
+          content: friendlyMsg,
           time: nowTime(), files: [], usedMemories: [],
         }])
         return

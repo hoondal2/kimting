@@ -35,6 +35,11 @@ public class MemoryService implements MemoryUseCase {
     @Override
     @Transactional
     public Memory store(Memory memory) {
+        if (memory.getType() == null) throw new IllegalArgumentException("기억 타입은 필수입니다.");
+        if (memory.getTitle() == null || memory.getTitle().isBlank()) throw new IllegalArgumentException("기억 제목은 필수입니다.");
+        if (memory.getImportance() != null && (memory.getImportance() < 1 || memory.getImportance() > 10)) {
+            throw new IllegalArgumentException("중요도는 1~10 사이여야 합니다.");
+        }
         Memory saved = memoryRepository.save(memory);
         String embeddingText = saved.getSummary() != null ? saved.getSummary() : saved.getContent();
         vectorStore.add(List.of(new Document(saved.getId().toString(), embeddingText, buildMetadata(saved))));

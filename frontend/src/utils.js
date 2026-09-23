@@ -1,7 +1,7 @@
 export const TYPE_LABELS = {
   SCHEDULE: '일정', TODO: '할일', EMOTION: '감정',
   REFLECTION: '생각', PREFERENCE: '선호', RELATIONSHIP: '관계',
-  FACT: '사실', CONVERSATION: '대화',
+  FACT: '사실', CONVERSATION: '대화', EVENT: '이벤트',
 }
 
 export function formatMemDate(iso) {
