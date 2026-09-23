@@ -1,203 +1,160 @@
-# kimting
+# kimting — 나만의 AI와 대화하세요
 
-사람의 디지털 삶을 기억하는 오픈소스 Personal Memory Engine
+내 기억을 직접 저장하고, AI가 그것을 기억하며 대화합니다.  
+Ollama + Docker로 내 PC에서 무료로 실행됩니다. 외부 서버 불필요.
 
----
-
-## 소개
-
-기존 AI 챗봇은 대화 세션이 끝나면 모든 맥락을 잃는다. "지난주에 말한 회의 일정", "내가 싫어하는 음식", "친구 생일"을 매번 다시 설명해야 한다.
-
-kimting은 대화, 일정, 감정, 관계 등 사용자의 디지털 기억을 구조화하여 저장하고, AI 응답 생성 시 자동으로 활용하는 **개인 기억 엔진**이다.
-
-> "창수가 누구야?" — 단톡방에서 처음 보는 이름이 나와도, kimting이 있으면 AI가 이전 대화를 바탕으로 대답한다.
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Ollama](https://img.shields.io/badge/Ollama-로컬_LLM-black?style=flat-square)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
 
 ---
 
-## 주요 기능
+## 사전 준비
 
-- **자연어 Memory 파싱** — "나 내일 10시에 팀 회의 있어"를 자동으로 `SCHEDULE` 타입 구조체로 변환 (Gemini LLM + 규칙 기반 폴백)
-- **RAG 기반 개인화 채팅** — 메시지 수신 시 관련 기억을 벡터 검색 후 시스템 프롬프트에 주입, 새 기억은 자동 저장
-- **복합 랭킹 알고리즘** — 벡터 유사도 × 0.5 + 중요도 × 0.2 + 최신성(지수 감쇠) × 0.2 + 신뢰도 × 0.1
-- **KakaoTalk 임포터** — 카카오톡 대화 내보내기(`.txt`)를 Memory로 일괄 변환
-- **MCP 서버** — Claude Desktop에서 kimting 기억을 직접 조회
-- **JWT 인증 + 유저 격리** — SQL 레이어와 pgvector 메타데이터 필터 양쪽에서 이중 격리
+kimting을 실행하기 전에 아래 두 가지를 설치해야 합니다.
+
+| 필수 소프트웨어 | 역할 | 설치 방법 |
+|---|---|---|
+| **Ollama** | 로컬 AI 실행 엔진 | [ollama.com](https://ollama.com) 에서 다운로드 후 설치 |
+| **Docker Desktop** | DB + 앱 컨테이너 실행 | [docker.com](https://www.docker.com/products/docker-desktop/) 에서 다운로드 후 설치 |
+
+> **사양 안내** — RAM 8GB 이상, 저장 공간 5GB 이상 필요합니다. GPU 없이도 동작하지만, CPU만 사용 시 응답에 10~30초 소요될 수 있습니다.
+
+---
+
+## 빠른 시작
+
+### 1단계 — Ollama AI 모델 다운로드
+
+터미널을 열고 아래 명령어를 실행하세요. 처음 한 번만 하면 됩니다.
+
+```bash
+# 채팅 모델 (~1.6GB)
+ollama pull gemma2:2b
+
+# 기억 검색용 임베딩 모델 (~274MB)
+ollama pull nomic-embed-text
+```
+
+> 다운로드 후 Ollama가 백그라운드에서 실행 중인지 확인하세요. 시스템 트레이에 Ollama 아이콘이 보이면 정상입니다.
+
+### 2단계 — 저장소 다운로드 및 환경 설정
+
+```bash
+git clone https://github.com/your-username/kimting.git
+cd kimting
+
+# 환경 설정 파일 생성 (기본값 그대로 사용 가능)
+cp .env.example .env
+```
+
+필요하다면 `.env`를 열어 DB 비밀번호를 변경할 수 있습니다. 기본값으로도 로컬 실행에는 문제 없습니다.
+
+```env
+# DB 비밀번호 (원하는 값으로 변경 가능)
+DB_PASSWORD=kimting_local
+
+# Ollama 주소 (Windows/Mac은 기본값 사용)
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+```
+
+### 3단계 — Docker로 실행
+
+아래 명령어 하나로 DB와 앱이 동시에 실행됩니다. 처음에는 빌드 시간이 3~5분 걸립니다.
+
+```bash
+docker compose up --build
+```
+
+빌드가 완료되면 브라우저에서 **http://localhost:8080** 으로 접속하세요.
+
+---
+
+## 사용 방법
+
+| 기능 | 설명 |
+|---|---|
+| **회원가입 / 로그인** | 계정을 만들면 기억이 개인별로 격리되어 저장됩니다. |
+| **AI 채팅** | AI와 대화를 나눕니다. 저장된 기억을 바탕으로 답변합니다. |
+| **기억 저장** | AI와 대화 중 중요한 내용은 자동으로 기억에 저장됩니다. 직접 기억을 추가하거나 수정할 수도 있습니다. |
+| **기억 검색** | 저장된 기억을 키워드로 검색합니다. 의미 기반(벡터) 검색이 적용됩니다. |
+| **카카오톡 대화 가져오기** | 카카오톡 대화 내보내기 파일을 업로드하면 AI가 기억을 자동으로 추출합니다. |
+
+---
+
+## 앱 종료 및 재시작
+
+```bash
+# 종료
+docker compose down
+
+# 재시작 (빌드 불필요)
+docker compose up
+
+# 데이터(기억, 계정)까지 초기화하고 싶을 때
+docker compose down -v
+```
+
+> **주의** — `docker compose down -v`는 저장된 모든 기억과 계정을 삭제합니다. 신중하게 사용하세요.
 
 ---
 
 ## 기술 스택
 
-| 항목 | 선택 |
-|------|------|
-| 언어 | Java 21 |
-| 프레임워크 | Spring Boot 3.5.16 |
-| AI 프레임워크 | Spring AI 1.1.0 |
-| LLM | Google Gemini (`gemini-2.0-flash-lite`) — OpenAI 호환 엔드포인트 |
-| 임베딩 | Google `gemini-embedding-001` (768차원) |
-| 벡터 DB | pgvector (PostgreSQL 16, Docker) — HNSW 인덱스, COSINE_DISTANCE |
-| 인증 | Spring Security + JJWT 0.12.6 (HS256, Stateless) |
-| 프론트엔드 | Vite 5 + React 18 |
-| 프로토콜 | REST API, MCP (Model Context Protocol) |
+| 분류 | 기술 |
+|---|---|
+| **Backend** | Spring Boot 3.5, Spring AI 1.1, Spring Security, JWT |
+| **Frontend** | React 19, Vite |
+| **AI / LLM** | Ollama (로컬), gemma2:2b, nomic-embed-text, RAG 파이프라인 |
+| **Database** | PostgreSQL 16, pgvector, HNSW 인덱스 |
+| **DevOps** | Docker Compose, 멀티스테이지 빌드, Gradle |
+| **Architecture** | DDD + Hexagonal Architecture, MCP 서버 내장 |
 
 ---
 
-## 시작하기
+## 개발 환경 직접 실행 (선택)
 
-### 사전 요구사항
+Docker 없이 직접 실행하고 싶다면 아래 순서로 진행하세요.
 
+**필요한 것**
 - Java 21
-- Docker
-- [Google AI Studio](https://aistudio.google.com) API 키
+- Node.js 20+
+- PostgreSQL 15+ (pgvector 확장 설치 필요)
+- Ollama (위 모델 2개 다운로드된 상태)
 
-### 백엔드 실행
-
-```bash
-# 1. 저장소 클론
-git clone https://github.com/hoondal2/kimting.git
-cd kimting
-
-# 2. 설정 파일 복사
-cp src/main/resources/application.yaml.example src/main/resources/application.yaml
-```
-
-`application.yaml`을 열어 다음 값을 채운다:
-
-```yaml
-spring:
-  datasource:
-    password: your_db_password
-  ai:
-    openai:
-      api-key: your-gemini-api-key   # aistudio.google.com → Get API key
-
-kimting:
-  jwt:
-    secret: your-random-64-character-secret-string
-```
+`src/main/resources/application.yaml`에서 데이터소스를 로컬 DB로 맞춘 후:
 
 ```bash
-# 3. pgvector 컨테이너 실행
-docker-compose up -d
-
-# 4. 백엔드 실행
+# 백엔드 실행
 ./gradlew bootRun
 ```
 
-백엔드는 `http://localhost:8080`에서 실행된다.
-
-### 프론트엔드 실행
-
 ```bash
+# 프론트엔드 실행 (별도 터미널)
 cd frontend
 npm install
 npm run dev
 ```
 
-브라우저에서 `http://localhost:5173`으로 접속한다.
+프론트엔드는 `http://localhost:5173`, 백엔드는 `http://localhost:8080` 에서 실행됩니다.
 
 ---
 
-## API 요약
+## 자주 묻는 문제
 
-```
-# 인증
-POST   /api/auth/register          회원가입 (email, password, name)
-POST   /api/auth/login             로그인 → JWT 반환
+**Q. AI가 "연결할 수 없습니다" 오류를 냅니다.**  
+Ollama가 실행 중인지 확인하세요. 시스템 트레이에 Ollama 아이콘이 없다면 Ollama를 다시 시작하세요.
 
-# 채팅 (Bearer 토큰 필요)
-POST   /api/chat                   메시지 전송 → AI 응답 + 사용된/저장된 기억
+**Q. 첫 응답이 너무 오래 걸립니다.**  
+GPU가 없으면 처음 로딩에 30초 이상 걸릴 수 있습니다. 두 번째 메시지부터는 더 빠릅니다.
 
-# 기억 CRUD (Bearer 토큰 필요)
-POST   /api/memories               직접 저장
-GET    /api/memories               목록 (type, tag, limit 필터)
-GET    /api/memories/{id}          단건 조회
-PUT    /api/memories/{id}          수정
-DELETE /api/memories/{id}          삭제
+**Q. `docker compose up`이 DB 연결 오류를 냅니다.**  
+DB가 준비되기 전에 앱이 먼저 시작될 수 있습니다. 잠시 후 자동으로 재시도됩니다. 계속 오류가 난다면 `docker compose restart app`을 실행하세요.
 
-# 기억 검색
-GET    /api/memories/search?query=...&topK=10    벡터 유사도 검색
-GET    /api/memories/timeline?from=...&to=...    기간 조회
-GET    /api/memories/people/{name}               인물 기준 조회
-GET    /api/memories/recent                      최근 저장 기억
-
-# 기억 강화 / 약화
-POST   /api/memories/{id}/strengthen
-POST   /api/memories/{id}/forget
-
-# 자연어 파싱
-POST   /api/memories/parse         자연어 → Memory 구조체 (미리보기)
-POST   /api/memories/parse/confirm 파싱 결과 저장
-
-# 임포터
-POST   /api/memories/import/kakao  카카오톡 대화 파일 업로드
-```
+**Q. 기존에 Gemini 버전으로 저장된 기억이 검색이 안 됩니다.**  
+Gemini와 Ollama는 다른 벡터 공간을 사용합니다. `docker compose down -v`로 초기화 후 다시 시작하면 됩니다.
 
 ---
 
-## MCP 연동 (Claude Desktop)
-
-`claude_desktop_config.json`에 다음을 추가한다:
-
-```json
-{
-  "mcpServers": {
-    "kimting": {
-      "command": "java",
-      "args": ["-jar", "/path/to/kimting.jar", "--spring.ai.mcp.server.stdio=true"]
-    }
-  }
-}
-```
-
-사용 가능한 MCP 툴:
-- `searchMemory(query)` — 관련 기억 검색
-- `recentMemories()` — 최근 기억 목록
-- `memoriesByPerson(personName)` — 인물별 기억 조회
-
----
-
-## 프로젝트 구조
-
-```
-kimting/
-├── src/main/java/com/kimting/kimting/
-│   ├── api/                  # REST 컨트롤러 + DTO
-│   │   ├── AuthController.java
-│   │   ├── ChatController.java
-│   │   └── MemoryController.java
-│   ├── core/
-│   │   ├── domain/           # Memory, User 엔티티
-│   │   ├── repository/       # JPA Repository
-│   │   ├── service/          # 비즈니스 로직
-│   │   └── ranking/          # 복합 랭킹 알고리즘
-│   ├── parser/               # LLM / 규칙 기반 파서
-│   ├── importer/             # KakaoTalk 임포터
-│   ├── security/             # JWT 필터, SecurityConfig
-│   ├── mcp/                  # MCP 툴 (Claude Desktop 연동)
-│   └── config/               # Gemini 임베딩, CORS
-├── src/main/resources/
-│   ├── application.yaml.example   # 설정 템플릿 (공개)
-│   └── application.yaml           # 실제 설정 (gitignored)
-├── frontend/                 # Vite + React 프론트엔드
-└── docker-compose.yml        # pgvector 컨테이너
-```
-
----
-
-## 개발 현황
-
-| 주차 | 내용 | 상태 |
-|------|------|------|
-| 1주차 | Memory 모델 설계, pgvector, 임베딩 | ✅ 완료 |
-| 2주차 | KakaoTalk 임포터, 벡터 검색, 복합 랭킹 알고리즘 | ✅ 완료 |
-| 3주차 | REST API + 자연어 Memory 파싱 (LLM / 규칙 기반) | ✅ 완료 |
-| 4주차 | ChatService + Gemini RAG 채팅 + MCP 서버 | ✅ 완료 |
-| 5주차 | Vite + React 프론트엔드 (채팅, 기억 패널, 다크모드) | ✅ 완료 |
-| 6주차 | JWT 인증 + 유저별 기억 격리 + 프론트 디자인 리뉴얼 | ✅ 완료 |
-| 7주차 | 버그 수정 + 문서 정리 + 대회 제출 | 진행 중 |
-
----
-
-## 라이선스
-
-MIT
+MIT License
